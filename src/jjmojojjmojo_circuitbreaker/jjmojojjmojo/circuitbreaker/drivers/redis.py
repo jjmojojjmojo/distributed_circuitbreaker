@@ -101,7 +101,7 @@ class RedisDriver(Driver):
             self.logger.debug("Updating [%s] for '%s'", to_update.keys(), key)
             self._catch_redis_error('hmset', self.key(key), to_update)
         else:
-            self.logger.info("update() called with nothing to change for '%s'", key)
+            raise ValueError("You must specify one of failures, status, or checkin")
         
     def failure(self, key):
         failures = self._catch_redis_error("hincrby", self.key(key), "failures", 1)

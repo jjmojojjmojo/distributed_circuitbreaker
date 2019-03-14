@@ -46,3 +46,11 @@ def test_redis_error():
         
     with pytest.raises(DistributedBackendProblem):
         driver.delete("testkey")
+        
+def test_update_without_params():
+    """
+    Ensure an error is raised when you call update() with nothing to update
+    """
+    driver = RedisDriver(redis_url="redis://", prefix="test:")
+    with pytest.raises(ValueError):
+        driver.update("mykey")

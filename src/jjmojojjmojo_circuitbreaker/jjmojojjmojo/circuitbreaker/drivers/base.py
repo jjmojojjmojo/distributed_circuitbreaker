@@ -30,9 +30,6 @@ class Driver:
         if self.expires is not None:
             if self.now() - checkin >= self.expires:
                 self.delete(key)
-        
-    def checkin(self, key):
-        self.update(key, checkin=self.now())
     
     def failure(self, key):
         pass

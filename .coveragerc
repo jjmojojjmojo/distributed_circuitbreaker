@@ -1,0 +1,4 @@
+[run]
+omit = src/jjmojojjmojo_circuitbreaker/jjmojojjmojo/circuitbreaker/tests/*
+       func/conftest.py
+       func/locustfile.py

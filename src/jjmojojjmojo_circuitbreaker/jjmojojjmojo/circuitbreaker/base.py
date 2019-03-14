@@ -109,18 +109,6 @@ class CircuitBreaker:
         self.logger.debug("Logging failure for %s", self.key)
         self.failures = self.driver.failure(self.key)
         
-    def save(self):
-        """
-        Update this breaker's state.
-        """
-        self.logger.debug("Saving %s", self.key)
-        self.checkin = time.time()
-        self.driver.update(
-            key=self.key,
-            failures=self.failures,
-            status=self.status,
-            checkin=self.checkin)
-        
     def reset(self):
         """
         Reset the breaker to the closed state, reset failure count, re-checkin

@@ -49,6 +49,12 @@ def test_basic_operation():
     driver.delete('hello')
     
     assert "hello" not in driver.state
+    
+    with pytest.raises(BackendKeyNotFound):
+        driver.failure("hello")
+        
+    with pytest.raises(BackendKeyNotFound):
+        driver.delete("hello")
 
 def test_expiry():
     """
