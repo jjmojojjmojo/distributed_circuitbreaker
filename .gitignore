@@ -109,3 +109,9 @@ venv.bak/
 
 # Finder 
 .DS_Store
+
+# virtualenv
+/include
+/bin
+pip-selfcheck.json
+
