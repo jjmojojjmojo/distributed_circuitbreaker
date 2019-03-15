@@ -100,7 +100,7 @@ For example, imagine we have a service called *myservice*. We've set the :code:`
 
 Lets say *myservice* fails, on average, 3 times an hour. With this configuration, this will never trip the breaker. The client code will handle the errors as it sees fit (retry, report, alert the user, returned a cached response, etc).
 
-If *myservice* was having some technical difficulty one day, and it went down outright, every request would fail. Assuming it didn't come back up within the one hour window, the breaker in each client would close after the 11th failure. The clients would then get :code:`CircuitBreakerOpen`. This lets the client know something is wrong with the service, and so it can take different action. Every 60[*]_ seconds, the clients would retry the service and re-open the breaker if it succeeded. 
+If *myservice* was having some technical difficulty one day, and it went down outright, every request would fail. Assuming it didn't come back up within the one hour window, the breaker in each client would close after the 11th failure. The clients would then get :code:`CircuitBreakerOpen`. This lets the client know something is wrong with the service, and so it can take different action. Every 60 [*]_ seconds, the clients would retry the service and re-open the breaker if it succeeded. 
 
 After one hour, the service window would expire, and the breaker would reset to closed. If the service wasn't back up, the cycle would happen again.
 
