@@ -16,40 +16,43 @@ existing functions can be easily built.
 from .base import CircuitBreaker, STATUS_OPEN, STATUS_CLOSED
 from .drivers import RedisDriver, MemoryDriver
 
-class MemoryCircuitBreaker(CircuitBreaker):
-    def __init__(self, subject, key, expires=180, failures=5, timeout=10, jitter=None):
-        driver = MemoryDriver(expires=expires)
-        
-        CircuitBreaker.__init__(
-            self,
-            driver=driver,
-            subject=subject,
-            key=key,
-            failures=failures,
-            timeout=timeout,
-            jitter=jitter)
-
-class RedisCircuitBreaker(CircuitBreaker):
+def MemoryCircuitBreaker(key, subject, expires=180, failures=5, timeout=10, jitter=None):
     """
-    Compositon class that provides a Redis-based driver for the CircuitBreaker
-    class.
+    Create a ready-to-go CircuitBreaker with a MemoryDriver driver.
     """
+    driver = MemoryDriver(expires=expires)
+    
+    breaker = CircuitBreaker(
+        driver=driver,
+        subject=subject,
+        key=key,
+        failures=failures,
+        timeout=timeout,
+        jitter=jitter)
+    
+    return breaker
 
-    def __init__(self, subject, key, expires=180, redis_url=None, redis_connection=None, failures=5, timeout=10, jitter=None, prefix="rcb:"):
-        """
-        This constructor is a simple extension of the CircuitBreaker base.
+def RedisCircuitBreaker(key, subject, expires=180, failures=5, timeout=10, jitter=None, redis_url=None, redis_connection=None, prefix="rcb:"):
+    """
+    Create and configure a CircuitBreaker with a RedisDriver back-end.
+    
+    Special arguments:
+       - redis_url: string, see RedisDriver
+       - redis_connection: StrictRedis object, see RedisDriver
+       - prefix: a string to help group the circuit breaker keys in redis.
+    """
+    driver = RedisDriver(
+        redis_url=redis_url, 
+        redis_connection=redis_connection, 
+        expires=expires, 
+        prefix=prefix)
         
-        Special arguments:
-           - redis_url: string, see RedisDriver
-           - redis_connection: StrictRedis object, see RedisDriver
-        """
-        driver = RedisDriver(redis_url=redis_url, redis_connection=redis_connection, expires=expires, prefix=prefix)
-        
-        CircuitBreaker.__init__(
-            self, 
-            driver=driver, 
-            subject=subject, 
-            key=key, 
-            failures=failures, 
-            timeout=timeout,
-            jitter=jitter)
+    breaker = CircuitBreaker(
+        driver=driver, 
+        subject=subject, 
+        key=key, 
+        failures=failures, 
+        timeout=timeout,
+        jitter=jitter)
+    
+    return breaker

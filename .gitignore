@@ -113,5 +113,6 @@ venv.bak/
 # virtualenv
 /include
 /bin
+/share
 pip-selfcheck.json
 

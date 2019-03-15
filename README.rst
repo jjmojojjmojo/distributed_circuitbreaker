@@ -55,7 +55,7 @@ After checking out the source repository, the library can be installed via pip::
 	
 	It's preferable that you use a virtual python environment - the process is identical, just initialize your environment and don't use ``sudo``.
 	
-For typical use, you will want to have redis installed, or access to a redis server.
+For typical use, you will want to have `redis <https://redis.io/>`__ installed, or access to a redis server.
 
 Usage
 =====
@@ -63,11 +63,90 @@ To use in your applications, create a callable that handles the remote request a
 
 There are two available drivers - one is not distributed (``MemoryDriver``), the other uses Redis as a back-end (``RedisDriver``). Drivers are located in the ``jjmojojjmojo.circuitbreaker.drivers`` package.
 
-There are a few composition factory classes in ``jjmojojjmojo.circutibreaker`` that combine driver configuration and breaker configuration into one API, ``RedisCircuitBreaker`` and ``MemoryCircuitBreaker``.
+There are a few factory functions in ``jjmojojjmojo.circutibreaker`` that combine driver configuration and breaker configuration into one convenient API, ``RedisCircuitBreaker`` and ``MemoryCircuitBreaker``.
+
+Settings Overview
+-----------------
+For most use cases, you will only need to consider the following parameters:
+
+:key: A unique name for the service.
+:expires: How long should we care about errors?
+:timeout: How often should we retry the service once the breaker has opened?
+:failures: The number of failures that will constitute a fault.
+
+The breaker will open when the number of failures counted *within the window defined by expires* exceeds the maximum number of ``failures``.
+
+Once the breaker is open, it will recheck the service after the ``timeout`` has expired.
+
+For example, imagine we have a service called *myservice*. We've set the ``expires`` window to 3600 seconds (1 hour), number of failures to 10, and the ``timeout`` to 60 seconds.
+
+.. code:: python
+    
+    from jjmojojjmojo.circuitbreaker import RedisCircuitBreaker
+    
+    from yourapplication.contrived import service_func
+    
+    breaker = RedisCircuitBreaker(
+        "myservice", 
+        service_func, 
+        failures=10, 
+        timeout=60, 
+        redis_url="redis://localhost:6379/0", 
+        expires=3600)
+    
+    # now service_func is protected, and we call breaker to activate it
+    print(breaker())
+    
+
+Lets say *myservice* fails, on average, 3 times an hour. With this configuration, this will never trip the breaker. The client code will handle the errors as it sees fit (retry, report, alert the user, returned a cached response, etc).
+
+If *myservice* was having some technical difficulty one day, and it went down outright, every request would fail. Assuming it didn't come back up within the one hour window, the breaker in each client would close after the 11th failure. The clients would then get ``CircuitBreakerOpen``. This lets the client know something is wrong with the service, and so it can take different action. Every 60 seconds, the clients would retry the service and re-open the breaker if it succeeded. 
+
+After one hour, the service window would expire, and the breaker would reset to closed. If the service wasn't back up, the cycle would happen again.
+
+In most cases, catastrophic failures like this aren't common, and the service would be back up within the window. This is the main function of the circuit breaker pattern: it prevents "slamming" a service that is overloaded or otherwise in trouble, allowing for self rectification.
+
+Setting The Jitter Function
+---------------------------
+To prevent the `thundering herd problem <https://en.wikipedia.org/wiki/Thundering_herd_problem>`__, the ``CircuitBreaker`` class uses the concept of "jitter", or random variations. Jitter is applied to the ``timeout`` when deciding if a closed breaker should retry calling the service.
+
+By default, the jitter is a simple random integer between 1 and 10 (see ``jjmojojjmojo.circuitbreaker.base.rand_int_jitter()``).
+
+Jitter is useful for adjusting how your clients behave, and will likely need to be tweaked at scale.
+
+Jitter is provided to the ``CircuitBreaker`` as a callable of some sort. It takes no parameters and is expected to return a simple number (integer, float). That number is added to the ``timeout`` value when a closed breaker is considering whether it should check in with the service again.
+
+Here is a simple example of switching to a random Guassian distribution (aka `Normal Distribution <https://en.wikipedia.org/wiki/Normal_distribution>`__):
+
+.. code:: python
+    
+    import random
+    from yourapplication.contrived import service_func
+    from jjmojojjmojo.circuitbreaker import RedisCircuitBreaker
+    
+    def guass_jitter():
+        """
+        Return a simple random jitter value within 1 sigma of 2 in a guassian distribution.
+        """
+        return random.guass(2, 1)
+    
+    breaker = RedisCircuitBreaker(
+        "myservice", 
+        service_func, 
+        failures=10, 
+        timeout=60, 
+        redis_url="redis://localhost:6379/0", 
+        expires=3600, 
+        jitter=guass_jitter)
+    
+
+
+Example 1: Wrapping The Twitter API
+-----------------------------------
 
 Development Setup
 =================
-A local copy of redis is required for development (a remote install would work but it's not recommended).
+A local copy of `redis <https://redis.io/>`__ is required for development (a remote install would work but it's not recommended).
 
 The setup process is straight forward. 
 
@@ -96,6 +175,10 @@ Install the source:
     
     (distributed-circuitbreaker) $ pip install -e src/jjmojojjmojo_circuitbreaker
     
+Logging
+=======
+The code in this project makes extensive use of the python logging module. To peer deeply into its operation, set the log level to 
+    
 Running The Tests
 =================
 Tests are written using `py.test <https://docs.pytest.org/en/latest/index.html>`__.
@@ -109,6 +192,11 @@ The unit tests can be run without any external dependencies:
     (distributed-circuitbreaker) $ pytest src/
     
 The functional are located tests require some additional libraries, and `redis-server` on your `$PATH`.
+
+.. warning::
+    
+    The functional tests **are destructive**. They use a nonstandard port (6380) and database #9 to prevent accidental destruction of useful data, but they do run `FLUSHDB <https://redis.io/commands/flushdb>`__ between sessions.
+    
 
 To install the additional libraries, install `func/requirements.txt`:
 
@@ -128,6 +216,10 @@ To generate a coverage report, invoke the `pytest-cov <https://pypi.org/project/
     
     (distributed-circuitbreaker) $ pytest --cov-report term --cov=jjmojojjmojo.circuitbreaker func src
 
+Multi-Client/Threaded Testing
+=============================
+`locust.io <https://locust.io/>`__ configuration is provided in the ``func`` directory for load testing and testing the breaker implementations across multiple processes.
+    
 Testing Utility Tidbits
 =======================
 I had some fun working out tests cases for this project. This section points out some code that I found particularly worth noting.
@@ -140,4 +232,8 @@ It is located in the `jjmojojjmojo.circuitbreaker.tests.util` module.
 
 The Test Server
 ---------------
-In the `func` directory, I've built a server for functional testing that uses the `IntermittentFailer` class. The module is named `server.py`. It is configured via command-line options, so you can easily stand up a web service that will fail at a predictable time for integration tests.
+In the `func` directory, I've built a server for functional testing that uses the `IntermittentFailer` class. The module is named `server.py`. It is configured via command-line options, so you can easily stand up a web service that will fail at a predictable rate for integration tests.
+
+TODO Items
+==========
+A running list of things to consider and/or clean up are tracked in TODO.rst.

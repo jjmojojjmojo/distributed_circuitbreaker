@@ -36,9 +36,6 @@ def wait_for_port(port):
 def redis_url():
     """
     Starts up the redis server, returns a connection string.
-    
-    TODO: this is destructive!
-    TODO: change port/database?
     """
     port = 6380
     db = 9
@@ -61,9 +58,6 @@ def normal_app(redis_url):
     """
     Run a single-threaded, non-failing server - patched so it doesn't actually
     hit any remote services.
-    
-    TODO: choose random, unused port?
-    TODO: parametrize to let the user choose the port?
     """
     
     port = 8213
@@ -79,8 +73,6 @@ def failing_app(redis_url):
     Run a single-threaded server, patched so it doesn't actually
     hit any remote services, that will intermittently have depending services
     fail.
-    
-    TODO: choose random, unused port?
     """
     
     port = 9234

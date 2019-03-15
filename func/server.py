@@ -35,8 +35,6 @@ class CircuitBreakerApp:
         
         if kwargs["jitter"] is None:
             kwards["jitter"] = 0
-            
-        print(kwargs)
         
         # if 0 or False is passed, turn off expiration
         if not kwargs["expires"]:
