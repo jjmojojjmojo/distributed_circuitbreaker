@@ -21,6 +21,33 @@ def test_cycle():
     assert 2 == next(cycler)
     assert 3 == next(cycler)
     assert 0 == next(cycler)
+    
+def test_cycle_class():
+    """
+    Make sure the class-based cycler functions
+    """
+    i = range(4)
+    
+    cycler = util.Cycle(i)
+    
+    assert cycler.index == -1
+    
+    assert 0 == next(cycler)
+    assert 1 == next(cycler)
+    assert 2 == next(cycler)
+    
+    assert cycler.index == 2
+    
+    assert 3 == next(cycler)
+    assert 0 == next(cycler)
+    
+    assert cycler.index == 0
+    
+    assert 1 == next(cycler)
+    assert 2 == next(cycler)
+    assert 3 == next(cycler)
+    assert 0 == next(cycler)
+    
 
 def test_intermittent_failer_defaults():
     """

@@ -1,5 +1,8 @@
 """
 Unit Tests for the RedisDriver back-end.
+
+For integration and functional tests, see the func/ directory in the main source
+distribution.
 """
 from ..drivers.redis import RedisDriver
 from ..errors import DistributedBackendProblem

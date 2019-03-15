@@ -1,3 +1,7 @@
+"""
+Base class for the CircuitBreaker.
+"""
+
 import time
 import logging
 import random
@@ -10,7 +14,7 @@ from .drivers import Driver
 
 def rand_int_jitter():
     """
-    Generate jitter using random.randint().
+    Generate jitter between 0 and 10 using random.randint().
     """
     return random.randint(0, 10)
 
@@ -31,24 +35,21 @@ class CircuitBreaker:
         Constructor.
         
         Parameters:
-            - driver, Driver object, required. An implementation of the Driver 
+            - driver: Driver object, required. An implementation of the Driver 
               class from the drivers module, used for storing the state of the 
               CircuitBreaker instance.
-            - subject, callable, required - the function to wrap in circuit breaker
+            - subject:, callable, required - the function to wrap in circuit breaker
               logic.
-            - key, string, required - the key that will be used to store the circuit
-              breaker state in Redis.
-            - redis_url, string, conditional - connection string for Redis. Required
-              if 'redis' isn't provided.
-            - redis, redis.StrictRedis (or similar) object, conditional. Used to
-              connect to redis. Required if 'redis_url' is not provided.
-            - failures, int, defaults to 5 - number of failures that will trigger
-              the breaker to open
-            - timeout, int, defaults to 10 - number of seconds to wait when the
+            - key: string, required - the key that will be used to store the circuit
+              breaker state in the back-end.
+            - failures: int, defaults to 5 - number of failures that will trigger
+              the breaker to open.
+            - timeout: int, defaults to 10 - number of seconds to wait when the
               the breaker is open, before trying the 'subject' again. If the
               subject succeeds, the breaker will close again.
-            - jitter, callable to add jitter to the timeout, prevents "stampeding herd"
-              issues. Takes no params, returns a number to add to the timeout check.
+            - jitter: callable or fixed value to add jitter to the timeout, 
+              prevents "stampeding herd" issues. Callable takes no params, returns 
+              a number to add to the timeout check.
         """
         self.subject = subject
         self.key = key
@@ -77,6 +78,11 @@ class CircuitBreaker:
         
     @property
     def jitter(self):
+        """
+        Wrap the external jitter function, and stash the last value in self._jitter
+        
+        Will return the fixed value instead if one was provided.
+        """
         self.logger.debug("Generating jitter")
         if callable(self._jitter):
             jitter = self._jitter()
@@ -90,6 +96,13 @@ class CircuitBreaker:
         return jitter
         
     def load(self):
+        """
+        Retrieve the data from the centralized store.
+        
+        Creates a new object if one is not found.
+        
+        Handles calling the driver's expire() method as well.
+        """
         self.driver.expire(self.key, self.checkin)
         
         self.logger.debug("Loading %s", self.key)
@@ -106,12 +119,15 @@ class CircuitBreaker:
         self.status = info["status"]
         
     def failure(self):
+        """
+        Log a single failure.
+        """
         self.logger.debug("Logging failure for %s", self.key)
         self.failures = self.driver.failure(self.key)
         
     def reset(self):
         """
-        Reset the breaker to the closed state, reset failure count, re-checkin
+        Reset the breaker to the closed state.
         """
         self.logger.debug("Resetting %s", self.key)
         self.driver.reset(self.key)
@@ -128,7 +144,7 @@ class CircuitBreaker:
     
     def close(self):
         """
-        Close, and reset the breaker
+        Close the breaker
         """
         if self.status == STATUS_OPEN:
             self.logger.info("Closing %s", self.key)

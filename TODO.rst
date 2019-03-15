@@ -16,27 +16,34 @@ It might be useful to generate API docs using sphinx and `autodoc <http://www.sp
 
 This requires adding markup to the docstrings in the text. 
 
-Rename 'subject' to 'service' in ``CircuitBreaker``
----------------------------------------------------
-'subject' is used to refer to the callable object that the ``CircuitBreaker`` class is protecting. It may be more useful to refer to it as the "service".
+:code:`CircuitBreaker` API Changes
+----------------------------------
 
-Rename 'key' to 'name' in ``CircuitBreaker``
---------------------------------------------
+Rename 'failures' constructor param to 'max_failures'
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The constructor parameters and the attributes they control should be synced.
+
+Rename 'subject' to 'service' in :code:`CircuitBreaker`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+'subject' is used to refer to the callable object that the :code:`CircuitBreaker` class is protecting. It may be more useful to refer to it as the "service".
+
+Rename 'key' to 'name' in :code:`CircuitBreaker`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 It's a bit confusing to use the word 'key' in the parameters. Something more descriptive, that separates what the name is (an identifier for the service) from how it's stored by a given driver would be ideal.
 
-Move 'expires' Concept To ``CircuitBreaker``
---------------------------------------------
+Move 'expires' Concept To :code:`CircuitBreaker`
+------------------------------------------------
 Currently the "expires" configuration defines the window within failures "matter". If we have a window of 100 seconds, and the number of failures that is considered a fault condition is 50, we have to hit 50 failures in 100 seconds. When 100 seconds have elapsed, the failure count is reset.
 
 The code relies on the back-end to handle this through the idea of "expiration", influenced by the redis EXPIRE command. The expiration is set to, in this example, 100 seconds *from object creation in the database*.
 
-It may be prudent to refactor things such that two time intervals are tracked in the main CircuitBreaker class: the time since the object was first created (what we currently call "expires", and the time since the object transitioned into the ``STATUS_OPEN`` state (what we currently call ``checkin``).
+It may be prudent to refactor things such that two time intervals are tracked in the main CircuitBreaker class: the time since the object was first created (what we currently call "expires", and the time since the object transitioned into the :code:`STATUS_OPEN` state (what we currently call :code:`checkin`).
 
-This way the breaker can decide when the window has closed. The name of the properties could be changed to be more descriptive (something like ``failure_window`` and ``time_since_fault``).
+This way the breaker can decide when the window has closed. The name of the properties could be changed to be more descriptive (something like :code:`failure_window` and :code:`time_since_fault`).
 
 Reset Expires When Breaker Closes
 ---------------------------------
-It seems reasonable that the expiry window should reset when the breaker returns to the ``STATUS_CLOSED`` state. Currently, this only happens when the breaker is unable to load an existing record from the driver and creates a new object. This means that a breaker could naturally close, and then subsequently expire.
+It seems reasonable that the expiry window should reset when the breaker returns to the :code:`STATUS_CLOSED` state. Currently, this only happens when the breaker is unable to load an existing record from the driver and creates a new object. This means that a breaker could naturally close, and then subsequently expire.
 
 It's not clear if this is an issue, however - the current implementation treats "expiry" to mean that the object is deleted from the back-end storage. It is then re-created. This may be unnecessary overhead, especially if the back-end doesn't support automated expiry like redis does.
 
@@ -50,7 +57,7 @@ Features
     
 Exponential Back-Off
 --------------------
-The timeout/recheck logic in the current implementation is quite naive. When the breaker is open, the code simply waits for ``timeout`` seconds and 
+The timeout/recheck logic in the current implementation is quite naive. When the breaker is open, the code simply waits for :code:`timeout` seconds and adds some random jitter. The jitter is configurable, but it may be useful to track how often a service has been retried, and increase the timeout by some scale (exponential is common, logarithmic would be good too) if it fails to function after multiple retries.
 
 Implementation: Memcached
 -------------------------
@@ -58,7 +65,7 @@ A useful Driver implementation would be one using memcached.
 
 Implemetation: Relational DB
 ----------------------------
-A driver implementation using a relational database would be an interesting project to prove out the ``Driver`` API and separation of concerns between the ``Driver`` and ``CircuitBreaker`` classes.
+A driver implementation using a relational database would be an interesting project to prove out the :code:`Driver` API and separation of concerns between the :code:`Driver` and :code:`CircuitBreaker` classes.
 
 Feature: Status Dashboard
 -------------------------

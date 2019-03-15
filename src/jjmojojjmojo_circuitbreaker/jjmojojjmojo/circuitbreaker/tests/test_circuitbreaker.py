@@ -12,6 +12,9 @@ import random
 from . import util
 
 def fail(x):
+    """
+    Takes one parameter, always fails with a generic exception.
+    """
     raise Exception()
 
 def test_basic_breaker():

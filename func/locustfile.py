@@ -1,3 +1,7 @@
+"""
+Configuration for running locust.io load testing.
+"""
+
 from locust import HttpLocust, Locust, TaskSet, task, events
 from datetime import datetime
 import logging
@@ -21,6 +25,11 @@ def logging_handler(request_type, name, response_time, response_length, **kw):
 
 class UserBehavior(TaskSet):
     def setup(self):
+        """
+        Setup starts:
+          - a redis server 
+          - failing server.py instance with 10 workers
+        """
         module_dir = os.path.dirname(os.path.realpath(__file__))
         
         app_port = 9234
@@ -39,6 +48,9 @@ class UserBehavior(TaskSet):
         wait_for_port(app_port)
         
     def teardown(self):
+        """
+        Shut down our processes.
+        """
         self.app_process.terminate()
         self.redis_process.terminate()
     

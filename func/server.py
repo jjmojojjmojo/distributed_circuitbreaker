@@ -1,5 +1,7 @@
 """
 Web Server To Run Functional/Integration Tests
+
+The server uses the gunicorn API to act as a robust but stand-alone service.
 """
 
 import gunicorn.app.base
@@ -43,6 +45,25 @@ class CircuitBreakerApp:
         self.cb = breaker_class(**kwargs)
     
     def __call__(self, environ, start_response):
+        """
+        There are two possible requests this application processes.
+        
+        If the request uri is /reset, the circuit breaker's reset() method
+        is called.
+        
+        Otherwise the ppplication returns a JSON object containing the 
+        following keys:
+        
+        - code: a string indicating what happened. Options are:
+                    - "ok", the call succeeded.
+                    - "back-end-failure", the service raised an exception
+                    - "circuitbreaker-open", the circuit breaker has opened.
+        - value: the last value returned from the service.
+        - breaker-info: the output of CircuitBreaker.dict()
+        - expires: the expiry value of the Driver object
+        - failer-info: if an IntermittentFailer object was passed as the service,
+                       returns state information (IntermittentFailer.dict())
+        """
         req = Request(environ)
         
         out = {
@@ -81,7 +102,10 @@ class CircuitBreakerApp:
         return res(environ, start_response)
 
 class StandaloneApplication(gunicorn.app.base.BaseApplication):
-
+    """
+    A gunicorn application that can be configured via our command-line
+    options and runs our CircuitBreakerApp above.
+    """
     def __init__(self, app, options=None):
         self.options = options or {}
         self.application = app
@@ -95,19 +119,19 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
     def load(self):
         return self.application
 
-parser = argparse.ArgumentParser(description='Test server.')
-parser.add_argument('-p', '--port', type=int, default=8909)
-parser.add_argument('-r', '--redis-url', type=str, default="redis://localhost:6379/0")
-parser.add_argument('-e', '--expires', type=int, default=10)
-parser.add_argument('-l', '--log-level', type=str, default="info")
-parser.add_argument('-f', '--cb-failures', type=int, default=5)
-parser.add_argument('-t', '--cb-timeout', type=int, default=10)
-parser.add_argument('--fail-freq', type=int, default=5)
-parser.add_argument('--fail-count', type=int, default=6)
-parser.add_argument('-w', '--workers', type=int, default=1)
-parser.add_argument('-j', '--jitter', type=int, default=0)
-parser.add_argument('-b', '--backend', type=str, default="redis", choices=["redis", "memory"])
-parser.add_argument('server', type=str, default="normal", choices=["normal", "failing"])
+parser = argparse.ArgumentParser(description='Distributed Circuit Breaker Test Server.')
+parser.add_argument('-p', '--port', type=int, default=8909, help="Port for the service to listen on")
+parser.add_argument('-r', '--redis-url', type=str, default="redis://localhost:6379/0", help="Redis connection URL")
+parser.add_argument('-e', '--expires', type=int, default=10, help="Time to live for back-end data")
+parser.add_argument('-l', '--log-level', type=str, default="info", help="Set the logging level. Options are the constants in the logging module.")
+parser.add_argument('-f', '--cb-failures', type=int, default=5, help="Number of failures before the circuit breaker closes")
+parser.add_argument('-t', '--cb-timeout', type=int, default=10, help="Number of seconds before a closed circuit breaker will retry the service its wrapping")
+parser.add_argument('--fail-freq', type=int, default=5, help="The call number when the service starts failing")
+parser.add_argument('--fail-count', type=int, default=6, help="The number of calls that will fail once the service starts failing")
+parser.add_argument('-w', '--workers', type=int, default=1, help="The number of web process workers to spawn.")
+parser.add_argument('-j', '--jitter', type=int, default=0, help="The amount of jitter when deciding if the timeout has been reached. Note this is always a fixed amount")
+parser.add_argument('-b', '--backend', type=str, default="redis", choices=["redis", "memory"], help="Indicate a specific back-end to use.")
+parser.add_argument('server', type=str, default="normal", choices=["normal", "failing"], help="Should be server always work, or should it intermittently fail?")
 
 if __name__ == '__main__':
     opts = parser.parse_args()

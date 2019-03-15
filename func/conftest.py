@@ -71,7 +71,7 @@ def normal_app(redis_url):
 def failing_app(redis_url):
     """
     Run a single-threaded server, patched so it doesn't actually
-    hit any remote services, that will intermittently have depending services
+    hit any remote services, that will intermittently have the depending service
     fail.
     """
     

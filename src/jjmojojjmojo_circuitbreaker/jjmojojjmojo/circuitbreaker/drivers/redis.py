@@ -1,3 +1,7 @@
+"""
+Redis-backed Driver for the CircuitBreaker.
+"""
+
 from .base import Driver, STATUS_OPEN, STATUS_CLOSED
 import time
 from ..errors import DistributedBackendProblem, BackendKeyNotFound
@@ -9,6 +13,11 @@ class RedisDriver(Driver):
     """
     
     def __init__(self, expires=None, redis_connection=None, redis_url=None, prefix="rcb:"):
+        """
+        redis_connection: a redis connection object (or one that follows its API)
+        redis_url: string, connection info for a redis server.
+        prefix: string, used to group circuit breaker keys in redis.
+        """
         Driver.__init__(self, expires=expires)
         
         self.prefix = prefix
@@ -53,7 +62,7 @@ class RedisDriver(Driver):
         
     def _catch_redis_error(self, command, *args, **kwargs):
         """
-        Centralize the catching and re-raising of any redis-reated errors.
+        Centralize the catching and re-raising of any redis-related errors.
         """
         try:
             self.logger.debug("Attempting to execute command '%s'", command)
@@ -81,7 +90,6 @@ class RedisDriver(Driver):
         
     def delete(self, key):
         self.logger.debug("Deleting '%s'...", key)
-        
         self._catch_redis_error('delete', self.key(key))
         
     def update(self, key, failures=None, status=None, checkin=None):

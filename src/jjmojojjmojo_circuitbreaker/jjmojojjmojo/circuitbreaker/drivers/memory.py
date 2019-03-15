@@ -1,3 +1,7 @@
+"""
+A simple in-memory implementation of a CircuitBreaker Driver class.
+"""
+
 from .base import Driver, STATUS_OPEN, STATUS_CLOSED
 from ..errors import BackendKeyNotFound
 import time
@@ -6,6 +10,8 @@ import logging
 class MemoryDriver(Driver):
     """
     Simple in-memory storage.
+    
+    Uses an internal dictionary to store circuit breaker state.
     """
     def __init__(self, expires=None):
         Driver.__init__(self, expires)

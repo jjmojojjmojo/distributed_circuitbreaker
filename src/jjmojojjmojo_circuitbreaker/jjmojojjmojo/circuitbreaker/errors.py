@@ -1,3 +1,7 @@
+"""
+Collection of all custom exceptions used in this library.
+"""
+
 class CircuitBreakerException(Exception):
 	"""
 	Base class for all DCB-related errors
