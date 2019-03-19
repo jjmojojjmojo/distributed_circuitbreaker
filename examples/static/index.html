@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Generate A Random Dog</title>
+  <script src="js/zepto.min.js"></script>
+  <script src="js/mustache.min.js"></script>
+  
+  <script id="debug-template" type="x-tmpl-mustache">
+    <dl>
+        <dt>checkin:</dt>
+        <dd>{{ cb.checkin }}</dd>
+        <dt>failures:</dt>
+        <dd>{{ cb.failures }}</dd>
+        <dt>status:</dt>
+        <dd>{{ cb.status }}</dd>
+        <dt>timeout:</dt>
+        <dd>{{ cb.timeout }}</dd>
+        <dt>max failures:</dt>
+        <dd>{{ cb.max_failures }}</dd>
+        <dt>jitter:</dt>
+        <dd>{{ cb.jitter }}</dd>
+        <dt>key:</dt>
+        <dd>{{ cb.key }}</dd>
+    </dl>
+  </script>
+  
+  <link href="css/style.css" rel="stylesheet" />
+</head>
+<body>
+    <h1>Random Dog!</h1>
+    <div id="dog">
+    <img src="images/default-peanut.jpg">
+    </div>
+    <button id="next">New Dog</button>
+    <div id="debug">
+    <h1>Debugging Information</h1>
+        <div id="status">
+        </div>
+        <div id="debug-info">
+        </div>
+    </div>
+    <script src="js/main.js"></script>
+</body>
+</html>
