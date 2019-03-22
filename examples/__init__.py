@@ -1,0 +1,1 @@
+from .random_dog import app as random_dog
