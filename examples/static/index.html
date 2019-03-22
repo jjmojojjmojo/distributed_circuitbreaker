@@ -3,43 +3,62 @@
 <head>
   <meta charset="utf-8">
   <title>Generate A Random Dog</title>
-  <script src="js/zepto.min.js"></script>
+  <link href="css/style.css" rel="stylesheet" type="text/css">
+  <script src="js/jquery-3.3.1.min.js"></script>
   <script src="js/mustache.min.js"></script>
-  
-  <script id="debug-template" type="x-tmpl-mustache">
-    <dl>
-        <dt>checkin:</dt>
-        <dd>{{ cb.checkin }}</dd>
-        <dt>failures:</dt>
-        <dd>{{ cb.failures }}</dd>
-        <dt>status:</dt>
-        <dd>{{ cb.status }}</dd>
-        <dt>timeout:</dt>
-        <dd>{{ cb.timeout }}</dd>
-        <dt>max failures:</dt>
-        <dd>{{ cb.max_failures }}</dd>
-        <dt>jitter:</dt>
-        <dd>{{ cb.jitter }}</dd>
-        <dt>key:</dt>
-        <dd>{{ cb.key }}</dd>
-    </dl>
+    <script id="debug-template" type="x-tmpl-mustache">
+          <table id="info-table">
+            <tbody>
+                <tr>
+                    <th>checkin:</th>
+                    <td>{{ cb.checkin }}</td>
+                </tr>
+                <tr>
+                    <th>failures:</th>
+                    <td>{{ cb.failures }}</td>
+                </tr>
+                <tr>
+                    <th>status:</th>
+                    <td>{{ cb.status }}</td>
+                </tr>
+                <tr>
+                    <th>timeout:</th>
+                    <td>{{ cb.timeout }}</td>
+                </tr>
+                <tr>
+                    <th>max failures:</th>
+                    <td>{{ cb.max_failures }}</td>
+                </tr>
+                <tr>
+                    <th>jitter:</th>
+                    <td>{{ cb.jitter }}</td>
+                </tr>
+                <tr>
+                    <th>key:</th>
+                    <td>{{ cb.key }}</td>
+                </tr>
+            </tbody>
+            </table>
   </script>
-  
-  <link href="css/style.css" rel="stylesheet" />
 </head>
 <body>
-    <h1>Random Dog!</h1>
-    <div id="dog">
-    <img src="images/default-peanut.jpg">
-    </div>
+<div id="header">
+    <h1 id="title"><span id="status-icon">&#10004;</span>Random Dog!</h1>
+    <h1 id="debug-header">Debugging Information <span id="status"></span></h1>
     <button id="next">New Dog</button>
-    <div id="debug">
-    <h1>Debugging Information</h1>
-        <div id="status">
-        </div>
-        <div id="debug-info">
-        </div>
+</div>
+<div id="wrapper">
+    <div id="dog">
+        <img src="images/default-peanut.jpg">
     </div>
-    <script src="js/main.js"></script>
+    <div id="info">
+        <div id="info-text">
+        Welcome to the Random Dog demo! Click "New Dog" above to load a random dog.
+        
+
+        </div>
+   </div>
+</div>
+<script src="js/main.js"></script>
 </body>
 </html>
