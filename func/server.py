@@ -139,8 +139,8 @@ if __name__ == '__main__':
     loglevel = os.environ.get("LOGLEVEL", opts.log_level).upper()
     
     logging.basicConfig(
-        format="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s",
-        datefmt='%m/%d/%Y %I:%M:%S %p',
+        format="%(asctime)s [%(process)d] [%(levelname)s] %(message)s",
+        datefmt="[%Y-%m-%d %H:%M:%S %z]",
         level=getattr(logging, loglevel))
     
     options = {

@@ -47,6 +47,12 @@ It seems reasonable that the expiry window should reset when the breaker returns
 
 It's not clear if this is an issue, however - the current implementation treats "expiry" to mean that the object is deleted from the back-end storage. It is then re-created. This may be unnecessary overhead, especially if the back-end doesn't support automated expiry like redis does.
 
+Follow Module-Level Logging Conventions
+---------------------------------------
+Currently, the code doesn't adhere to the best practice of a "module-level logger" outlined in `the advanced logging tutorial <https://docs.python.org/3.7/howto/logging.html#logging-advanced-tutorial>`__. If it were to, the main logger would be named :code:`jjmojommjojo.circuitbreaker`, and sub loggers would be defined for :code:`jjmojojjmojo.circuitbreaker.CircuitBreaker`, :code:`jjmojojjmojo.circuitbreaker.RedisCircuitBreaker` and :code:`jjmojojjmojo.circuitbreaker.MemoryCircuitBreaker`. 
+
+This would allow fine-grained control over muting or including messages at various levels for the entire library.
+
 Features
 ========
 
@@ -59,6 +65,10 @@ Exponential Back-Off
 --------------------
 The timeout/recheck logic in the current implementation is quite naive. When the breaker is open, the code simply waits for :code:`timeout` seconds and adds some random jitter. The jitter is configurable, but it may be useful to track how often a service has been retried, and increase the timeout by some scale (exponential is common, logarithmic would be good too) if it fails to function after multiple retries.
 
+Expiry/Retry Agent
+------------------
+Instead of having every :code:`CircuitBreaker` instance check for the status of the back-end service, there may be utility in building an agent that will track open breakers, and update the status of them on behalf of the :code:`CircuitBreaker` instances.
+
 Implementation: Memcached
 -------------------------
 A useful Driver implementation would be one using memcached.
@@ -70,3 +80,13 @@ A driver implementation using a relational database would be an interesting proj
 Feature: Status Dashboard
 -------------------------
 It would be useful to provide, at a minimum, an API for reviewing and managing service data. This could be fleshed out into a web application or RESTful service to integrate into management consoles.
+
+Async Support
+-------------
+How would this library work in an asynchronous environment? What changes would need to be made to the way it works? 
+
+Message-based Model
+-------------------
+It's conceivable that this pattern could be implemented using a pub-sub or other sort of distributed messaging back-end, instead of using a central database. 
+
+In this model, the :code:`CircuitBreaker` instances would listen for status change events instead of polling and constantly checking the back-end via the :code:`Driver` to stay up to date.

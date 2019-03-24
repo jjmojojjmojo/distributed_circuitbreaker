@@ -155,8 +155,58 @@ To *fix* the jitter, such that it will always be the same amount, you can pass a
         expires=3600, 
         jitter=0)  # fixed jitter to 0
 
-Example 1: Wrapping The Twitter API
------------------------------------
+Example 1: Wrapping random.dog
+------------------------------
+To illustrate how the circuitbreaker is designed to function, I built a simple wrapper for `David Valachovic's <https://davidvalachovic.com/>`__ `https://random.dog <https://random.dog>`__ web service.
+
+The service itself is really easy to use, we just need to make a GET request to https://random.dog/woof.json. We do this on the server side in the example, but use the :code:`RedisCircutiBreaker` to protect it from too many concurrent failures. There is a single-page web application that talks to the server-side code. It also displays the state of the circuit breaker so you can peek into what's going on.
+
+When an error is detected, a picture of my dog Peanut is displayed, overlayed with the word "ERROR". 
+
+When the breaker is open, the back-end returns a cached response instead.
+
+.. note::
+    
+    This is just done to provide a difference between an error state and the "breaker open" state. In a real-world application, more useful actions would be taken: return a cached response, a retry by the front-end, etc.
+    
+
+The code is located in :code:`examples/random_dog`.
+
+It is heavily commented inline. It uses :code:`IntermittentFailer` to provide a reliable failure rate (random.dog is quite robust).
+
+Before proceeding, activate the virtual environment:
+
+.. code:: console
+    
+    $ source bin/activate
+    (distributed_circuitbreaker) $
+    
+
+To use the examples, install the :code:`requirements.txt` in the :code:`examples` directory:
+
+.. code:: console
+    
+    (distributed_circuitbreaker) $ pip install -r examples/requirements.txt
+    
+Before you start a web server (`gunicorn <https://gunicorn.org/>`__ is provided), you will need to have a running redis. The example assumes this is running on the default port on your local host. You can start the server thusly:
+
+.. code:: console
+    
+    $ redis-server
+    
+Then run the server:
+
+.. code:: console
+    
+    (distributed_circuitbreaker) $ gunicorn -w4 examples:random_dog
+    
+The example is configured to use DEBUG level logging output, so you can watch the console and see how things happen as they do.
+
+.. note::
+    
+    The number of workers you launch will influence the way the example behaves. This is because :code:`IntermittenFailer` is not distributed and a new copy is made for each worker. This makes each worker's fail rate cumulative in regards to the failure count in the circuit breaker. It works out nicely though, since the failures feel a little more random because of how :code:`gunicorn` load balances the workers.
+    
+
 
 Development Setup
 =================
@@ -192,7 +242,28 @@ Install the source:
 Logging
 =======
 The code in this project makes extensive use of the python logging module. To peer deeply into its operation, set the log level to 'DEBUG'.
+
+This can be done globally like this, and controlled via an environment variable. Just add code like the following before your application code is executed (be aware that this will change the *global* logging level, so you'll see debugging messages from any libraries that emit them):
+
+.. code:: python
     
+    import logging
+    import os
+    
+    loglevel = os.environ.get("LOGLEVEL", "debug").upper()
+    
+    logging.basicConfig(
+        format="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s",
+        datefmt='%m/%d/%Y %I:%M:%S %p',
+        level=getattr(logging, loglevel))
+    
+The format here is designed to mimic `gunicorn's default log formatting <https://github.com/benoitc/gunicorn/blob/29f0394cdd381df176a3df3c25bb3fdd2486a173/gunicorn/glogging.py#L87>`__. You will want to use a format and configuration appropriate for your situation.
+
+.. note::
+    
+    For complete details, see `python's logging documentation <https://docs.python.org/3/library/logging.html>`__.
+    
+
 Running The Tests
 =================
 Tests are written using `py.test <https://docs.pytest.org/en/latest/index.html>`__.
@@ -233,6 +304,21 @@ To generate a coverage report, invoke the `pytest-cov <https://pypi.org/project/
 Multi-Client/Threaded Testing
 =============================
 `locust.io <https://locust.io/>`__ configuration is provided in the :code:`func` directory for load testing and testing the breaker implementations across multiple processes.
+
+To run a locust swarm against the functional test server:
+
+.. code:: console
+    
+    $ source bin/activate
+    (distributed-circuitbreaker) $ pip install -r func/requirements.txt
+    (distributed-circuitbreaker) $ cd func
+    (distributed-circuitbreaker) $ locust
+    
+Then you can open http://127.0.0.1:8089, and stress test away. 
+
+.. note::
+    
+    The tests don't do much at the moment - it's a quick way to run a lot of gunicorn workers and slam them with requests to see what happens in general terms.
     
 Testing Utility Tidbits
 =======================

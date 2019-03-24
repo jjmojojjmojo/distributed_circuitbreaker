@@ -44,7 +44,7 @@ class UserBehavior(TaskSet):
         con = redis.StrictRedis.from_url(self.redis_url)
         con.flushall()
         
-        self.app_process = subprocess.Popen(f"python {module_dir}/server.py -w 10 -r {self.redis_url} -p {app_port} failing".split())
+        self.app_process = subprocess.Popen(f"python {module_dir}/server.py -l debug -w 10 -r {self.redis_url} -p {app_port} failing".split())
         wait_for_port(app_port)
         
     def teardown(self):
